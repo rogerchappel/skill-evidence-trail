@@ -1,0 +1,34 @@
+{
+  "name": "skill-evidence-trail",
+  "version": "0.1.0",
+  "description": "Local-first evidence packets for agent skill runs.",
+  "type": "module",
+  "bin": {
+    "skill-evidence-trail": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "docs",
+    "fixtures",
+    "SKILL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/index.js && node --check src/cli.js && node --check test/evidence.test.js",
+    "build": "node scripts/build-check.js",
+    "smoke": "node src/cli.js fixtures/run-events.json --artifacts fixtures/artifacts.json --format markdown --out /tmp/skill-evidence-trail-smoke.md"
+  },
+  "keywords": [
+    "agents",
+    "skills",
+    "evidence",
+    "audit",
+    "cli"
+  ],
+  "license": "MIT"
+}
+
