@@ -1,0 +1,15 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "kind": "docs",
+      "description": "Quickstart and safety notes"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill",
+      "description": "Reusable agent skill instructions"
+    }
+  ]
+}
+

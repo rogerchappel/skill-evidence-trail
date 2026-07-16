@@ -1,0 +1,40 @@
+{
+  "runId": "demo-skill-run",
+  "events": [
+    {
+      "type": "input",
+      "label": "request",
+      "value": "Prepare a release-candidate PR for an agent skill."
+    },
+    {
+      "type": "claim",
+      "id": "tests-pass",
+      "text": "The fixture-backed tests pass.",
+      "evidence": ["cmd-test"]
+    },
+    {
+      "type": "command",
+      "id": "cmd-test",
+      "command": "npm test",
+      "status": "pass",
+      "exitCode": 0,
+      "summary": "3 tests passed"
+    },
+    {
+      "type": "artifact",
+      "path": "docs/RELEASE_CANDIDATE.md",
+      "summary": "Release-candidate notes"
+    },
+    {
+      "type": "risk",
+      "severity": "low",
+      "text": "The report trusts fixture status fields."
+    },
+    {
+      "type": "verdict",
+      "classification": "ship",
+      "reason": "Local tests and smoke checks are present."
+    }
+  ]
+}
+
