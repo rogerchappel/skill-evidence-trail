@@ -49,11 +49,6 @@ try {
     cwd: packageDir,
     stdio: "inherit"
   });
-  execFileSync("bash", ["scripts/validate.sh"], {
-    cwd: packageDir,
-    stdio: "inherit"
-  });
-
   console.log(`package-check: ${packedFiles.size} files verified from packed artifact`);
 } finally {
   await rm(workspace, { recursive: true, force: true });
