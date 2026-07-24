@@ -13,6 +13,10 @@ npm run smoke
 node src/cli.js fixtures/run-events.json --artifacts fixtures/artifacts.json --format markdown
 ```
 
+Before publishing, run `npm run package:check`. It inspects the generated
+tarball and runs the tests, syntax check, build check, smoke command, and CLI
+help directly from the unpacked artifact.
+
 ## Input
 
 Run events may be an array or an object with an `events` array. Supported event
@@ -46,4 +50,3 @@ verdict without local events.
 - Markdown reports are concise by design.
 - The tool does not verify that an artifact path still exists unless it appears
   in the provided fixture data.
-

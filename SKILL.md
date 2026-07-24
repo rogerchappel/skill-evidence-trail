@@ -30,6 +30,6 @@ the current repository or before sharing reports publicly.
 
 ## Verification
 
-Run `npm test`, `npm run check`, `npm run build`, `npm run smoke`, and
-`bash scripts/validate.sh`.
-
+Run `npm test`, `npm run check`, `npm run build`, `npm run smoke`,
+`npm run package:check`, and `bash scripts/validate.sh`. The package check
+verifies these commands and the CLI help from the generated tarball.
