@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/cli.js && node --check test/evidence.test.js",
+    "check": "node --check src/index.js && node --check src/cli.js && node --check test/evidence.test.js && node --check test/cli.test.js",
     "build": "node scripts/build-check.js",
     "smoke": "node src/cli.js fixtures/run-events.json --artifacts fixtures/artifacts.json --format markdown --out /tmp/skill-evidence-trail-smoke.md",
     "package:check": "node scripts/package-check.js"
