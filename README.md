@@ -29,6 +29,10 @@ types are:
 - `risk`: unresolved limitation or privacy concern.
 - `verdict`: final `ship`, `incubate`, or `blocked` classification.
 
+Every `verdict` event must include one of those three classifications. Missing
+or unsupported classifications stop normalization and the CLI reports the
+zero-based event index so the invalid event can be corrected.
+
 Artifact manifests are optional JSON arrays or `{ "artifacts": [...] }` objects.
 
 ## CLI
@@ -46,7 +50,8 @@ verdict without local events.
 
 ## Limitations
 
-- Input validation is intentionally conservative and schema-light.
+- Input validation is intentionally conservative and schema-light, with strict
+  validation of verdict classifications.
 - Markdown reports are concise by design.
 - The tool does not verify that an artifact path still exists unless it appears
   in the provided fixture data.
