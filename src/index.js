@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const EVENT_TYPES = new Set(["input", "claim", "command", "artifact", "risk", "verdict"]);
+const VERDICT_CLASSIFICATIONS = new Set(["ship", "incubate", "blocked"]);
 
 export async function loadJson(path) {
   const raw = await readFile(path, "utf8");
@@ -67,6 +68,12 @@ function normalizeEvent(event, index) {
   if (!EVENT_TYPES.has(event.type)) {
     throw new Error(`Event ${index} has unsupported type: ${event.type}`);
   }
+  if (event.type === "verdict" && !event.classification) {
+    throw new Error(`Event ${index} is missing a verdict classification.`);
+  }
+  if (event.type === "verdict" && !VERDICT_CLASSIFICATIONS.has(event.classification)) {
+    throw new Error(`Event ${index} has unsupported verdict classification: ${event.classification}`);
+  }
   return {
     ...event,
     evidence: Array.isArray(event.evidence) ? event.evidence : event.evidence ? [String(event.evidence)] : []
@@ -104,4 +111,3 @@ function appendSection(lines, title, items) {
   lines.push(...(items.length ? items : ["- None recorded."]));
   lines.push("");
 }
-

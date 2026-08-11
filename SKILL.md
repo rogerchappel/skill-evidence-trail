@@ -18,7 +18,10 @@ release candidate, handoff, or public summary.
 
 ## Workflow
 
-1. Collect input, claim, command, artifact, risk, and verdict events.
+1. Collect input, claim, command, artifact, risk, and verdict events. Set every
+   verdict classification to exactly `ship`, `incubate`, or `blocked`; the CLI
+   rejects missing or unsupported values and identifies the zero-based event
+   index.
 2. Run `skill-evidence-trail run.json --artifacts artifacts.json --format markdown`.
 3. Review warnings for missing commands, uncovered claims, and unresolved risks.
 4. Paste the packet into the PR body or release-candidate notes.
