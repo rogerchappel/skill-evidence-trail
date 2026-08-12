@@ -42,6 +42,10 @@ skill-evidence-trail run.json --artifacts artifacts.json --format markdown --out
 skill-evidence-trail run.json --format json
 ```
 
+Each option may be specified at most once. Repeating `--format`, `--artifacts`,
+or `--out` is a usage error; the CLI rejects the command before reading the run
+or artifact inputs and before writing output.
+
 ## Safety
 
 The CLI is read-only except for an explicit `--out` path. It does not inspect
