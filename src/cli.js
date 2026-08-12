@@ -10,9 +10,9 @@ if (args.includes("--help") || args.length === 0) {
 }
 
 const runPath = args[0];
-const options = parseOptions(args.slice(1));
 
 try {
+  const options = parseOptions(args.slice(1));
   const run = await loadJson(runPath);
   const artifacts = options.artifacts ? await loadJson(options.artifacts) : null;
   const packet = normalizeRun(run, artifacts);
@@ -29,8 +29,13 @@ try {
 
 function parseOptions(tokens) {
   const options = { format: "markdown", out: null, artifacts: null };
+  const seen = new Set();
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
+    if (["--format", "--out", "--artifacts"].includes(token)) {
+      if (seen.has(token)) throw new Error(`${token} may only be specified once.`);
+      seen.add(token);
+    }
     if (token === "--format") options.format = readValue(tokens, ++index, token);
     else if (token === "--out") options.out = readValue(tokens, ++index, token);
     else if (token === "--artifacts") options.artifacts = readValue(tokens, ++index, token);
@@ -46,4 +51,3 @@ function readValue(tokens, index, flag) {
   if (!tokens[index]) throw new Error(`${flag} requires a value.`);
   return tokens[index];
 }
-
