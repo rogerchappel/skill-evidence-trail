@@ -34,6 +34,10 @@ or unsupported classifications stop normalization and the CLI reports the
 zero-based event index so the invalid event can be corrected.
 
 Artifact manifests are optional JSON arrays or `{ "artifacts": [...] }` objects.
+Each array element must be a non-null JSON object. An artifact may identify its
+location with `path` or `url` and may describe it with `description` or
+`summary`; for example, `{ "path": "reports/evidence.md", "description":
+"Rendered evidence packet" }`.
 
 ## CLI
 
