@@ -12,8 +12,8 @@ export async function loadJson(path) {
   }
 }
 
-export function normalizeRun(input, artifactInput = null) {
-  const events = Array.isArray(input) ? input : input.events;
+export function normalizeRun(input, artifactInput) {
+  const events = Array.isArray(input) ? input : isObject(input) ? input.events : undefined;
   if (!Array.isArray(events)) {
     throw new Error("Run input must be an array or an object with an events array.");
   }
@@ -82,12 +82,25 @@ function normalizeEvent(event, index) {
 
 function collectArtifacts(events, artifactInput) {
   const eventArtifacts = events.filter((event) => event.type === "artifact");
-  if (!artifactInput) return eventArtifacts;
-  const manifest = Array.isArray(artifactInput) ? artifactInput : artifactInput.artifacts;
+  if (artifactInput === undefined) return eventArtifacts;
+  const manifest = Array.isArray(artifactInput)
+    ? artifactInput
+    : isObject(artifactInput)
+      ? artifactInput.artifacts
+      : undefined;
   if (!Array.isArray(manifest)) {
     throw new Error("Artifact input must be an array or an object with an artifacts array.");
   }
+  for (const [index, artifact] of manifest.entries()) {
+    if (!isObject(artifact)) {
+      throw new Error(`Artifact ${index} must be an object.`);
+    }
+  }
   return [...eventArtifacts, ...manifest];
+}
+
+function isObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function buildWarnings({ claims, commands, risks, verdict }) {
