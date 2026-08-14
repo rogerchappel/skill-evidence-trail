@@ -31,6 +31,35 @@ test("CLI reports a missing verdict classification", async () => {
   assert.match(result.stderr, /skill-evidence-trail: Event 0 is missing a verdict classification/);
 });
 
+test("CLI reports a null run input", async () => {
+  const result = await runCliInput(null);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: Run input must be an array or an object with an events array.\n");
+});
+
+test("CLI reports a null artifact input", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-null-artifacts-test-"));
+  const artifacts = join(directory, "artifacts.json");
+  await writeFile(artifacts, "null");
+
+  const result = await runCli([], ["--artifacts", artifacts]);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: Artifact input must be an array or an object with an artifacts array.\n");
+});
+
+test("CLI identifies a null artifact by its zero-based index", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-invalid-artifact-test-"));
+  const artifacts = join(directory, "artifacts.json");
+  await writeFile(artifacts, JSON.stringify([{ path: "valid.md" }, null]));
+
+  const result = await runCli([], ["--artifacts", artifacts]);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: Artifact 1 must be an object.\n");
+});
+
 for (const [flag, firstValue, secondValue] of [
   ["--format", "json", "markdown"],
   ["--artifacts", "first.json", "second.json"],
@@ -77,8 +106,12 @@ test("CLI accepts one --out option", async () => {
 });
 
 async function runCli(events, options = []) {
+  return runCliInput({ events }, options);
+}
+
+async function runCliInput(input, options = []) {
   const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-test-"));
   const fixture = join(directory, "run.json");
-  await writeFile(fixture, JSON.stringify({ events }));
+  await writeFile(fixture, JSON.stringify(input));
   return spawnSync(process.execPath, ["src/cli.js", fixture, ...options], { encoding: "utf8" });
 }

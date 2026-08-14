@@ -14,7 +14,7 @@ const runPath = args[0];
 try {
   const options = parseOptions(args.slice(1));
   const run = await loadJson(runPath);
-  const artifacts = options.artifacts ? await loadJson(options.artifacts) : null;
+  const artifacts = options.artifacts ? await loadJson(options.artifacts) : undefined;
   const packet = normalizeRun(run, artifacts);
   const output = options.format === "json" ? renderJson(packet) : renderMarkdown(packet);
   if (options.out) {

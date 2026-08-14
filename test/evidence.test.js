@@ -25,6 +25,51 @@ test("warns when a claim has missing evidence", () => {
   assert.match(packet.warnings.join("\n"), /No verification commands/);
 });
 
+for (const [label, input] of [
+  ["null", null],
+  ["an object without events", {}]
+]) {
+  test(`rejects ${label} as a run input`, () => {
+    assert.throws(
+      () => normalizeRun(input),
+      /Run input must be an array or an object with an events array\./
+    );
+  });
+}
+
+for (const [label, input] of [
+  ["null", null],
+  ["an object without artifacts", {}]
+]) {
+  test(`rejects ${label} as an artifact input`, () => {
+    assert.throws(
+      () => normalizeRun([], input),
+      /Artifact input must be an array or an object with an artifacts array\./
+    );
+  });
+}
+
+for (const [index, artifact] of [[0, null], [1, "report.md"]]) {
+  test(`rejects a non-object artifact at index ${index}`, () => {
+    const artifacts = index === 0 ? [artifact] : [{ path: "valid.md" }, artifact];
+    assert.throws(
+      () => normalizeRun([], artifacts),
+      new RegExp(`Artifact ${index} must be an object\\.`)
+    );
+  });
+}
+
+test("retains valid array and object artifact forms", () => {
+  const arrayPacket = normalizeRun([], [{ path: "array.md" }]);
+  const objectPacket = normalizeRun({ runId: "object-run", events: [] }, {
+    artifacts: [{ url: "https://example.test/report" }]
+  });
+
+  assert.deepEqual(arrayPacket.artifacts, [{ path: "array.md" }]);
+  assert.equal(objectPacket.runId, "object-run");
+  assert.deepEqual(objectPacket.artifacts, [{ url: "https://example.test/report" }]);
+});
+
 for (const classification of ["ship", "incubate", "blocked"]) {
   test(`accepts the ${classification} verdict classification`, () => {
     const packet = normalizeRun({
