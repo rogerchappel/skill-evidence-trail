@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+
+const cliPath = join(process.cwd(), "src/cli.js");
 
 for (const classification of ["ship", "incubate", "blocked"]) {
   test(`CLI accepts the ${classification} verdict classification`, async () => {
@@ -103,6 +105,66 @@ test("CLI accepts one --out option", async () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, "");
+});
+
+test("CLI rejects an output path that aliases the run input", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-run-alias-test-"));
+  const run = join(directory, "run.json");
+  const source = '{"events":[]}\n';
+  await writeFile(run, source);
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, "run.json", "--out", run],
+    { cwd: directory, encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
+  assert.equal(await readFile(run, "utf8"), source);
+});
+
+test("CLI rejects an output path that aliases the artifact input", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-artifact-alias-test-"));
+  const run = join(directory, "run.json");
+  const artifacts = join(directory, "artifacts.json");
+  const runSource = '{"events":[]}\n';
+  const artifactSource = '{"artifacts":[]}\n';
+  await writeFile(run, runSource);
+  await writeFile(artifacts, artifactSource);
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, run, "--artifacts", "artifacts.json", "--out", artifacts],
+    { cwd: directory, encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the artifact input.\n");
+  assert.equal(await readFile(run, "utf8"), runSource);
+  assert.equal(await readFile(artifacts, "utf8"), artifactSource);
+});
+
+test("CLI writes a distinct output without changing either input", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-distinct-out-test-"));
+  const run = join(directory, "run.json");
+  const artifacts = join(directory, "artifacts.json");
+  const output = join(directory, "evidence.md");
+  const runSource = '{"events":[]}\n';
+  const artifactSource = '{"artifacts":[]}\n';
+  await writeFile(run, runSource);
+  await writeFile(artifacts, artifactSource);
+
+  const result = spawnSync(
+    process.execPath,
+    ["src/cli.js", run, "--artifacts", artifacts, "--out", output],
+    { encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(await readFile(output, "utf8"), /# Evidence Trail:/);
+  assert.equal(await readFile(run, "utf8"), runSource);
+  assert.equal(await readFile(artifacts, "utf8"), artifactSource);
 });
 
 async function runCli(events, options = []) {
