@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { loadJson, normalizeRun, renderJson, renderMarkdown } from "./index.js";
 
 const args = process.argv.slice(2);
@@ -13,6 +14,7 @@ const runPath = args[0];
 
 try {
   const options = parseOptions(args.slice(1));
+  validateOutputPath(runPath, options);
   const run = await loadJson(runPath);
   const artifacts = options.artifacts ? await loadJson(options.artifacts) : undefined;
   const packet = normalizeRun(run, artifacts);
@@ -25,6 +27,18 @@ try {
 } catch (error) {
   console.error(`skill-evidence-trail: ${error.message}`);
   process.exit(1);
+}
+
+function validateOutputPath(runPath, options) {
+  if (!options.out) return;
+
+  const outputPath = resolve(options.out);
+  if (outputPath === resolve(runPath)) {
+    throw new Error("--out must not overwrite the run input.");
+  }
+  if (options.artifacts && outputPath === resolve(options.artifacts)) {
+    throw new Error("--out must not overwrite the artifact input.");
+  }
 }
 
 function parseOptions(tokens) {
