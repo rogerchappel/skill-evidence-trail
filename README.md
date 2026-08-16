@@ -50,11 +50,15 @@ Each option may be specified at most once. Repeating `--format`, `--artifacts`,
 or `--out` is a usage error; the CLI rejects the command before reading the run
 or artifact inputs and before writing output.
 
+An `--out` path must be distinct from both the run input and the optional
+artifact input. Equivalent relative and absolute paths are rejected before any
+file is written, so the CLI never overwrites either source file.
+
 ## Safety
 
-The CLI is read-only except for an explicit `--out` path. It does not inspect
-agent memory, call connector APIs, upload artifacts, or infer a successful
-verdict without local events.
+The CLI is read-only except for an explicit, non-input `--out` path. It does not
+inspect agent memory, call connector APIs, upload artifacts, or infer a
+successful verdict without local events.
 
 ## Limitations
 
