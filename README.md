@@ -34,6 +34,9 @@ or unsupported classifications stop normalization and the CLI reports the
 zero-based event index so the invalid event can be corrected.
 
 Artifact manifests are optional JSON arrays or `{ "artifacts": [...] }` objects.
+Markdown output collapses embedded line breaks in event values so they cannot create
+headings or list entries, escapes inline Markdown punctuation, and uses a code-span
+delimiter long enough to preserve commands containing backticks.
 Each array element must be a non-null JSON object. An artifact may identify its
 location with `path` or `url` and may describe it with `description` or
 `summary`; for example, `{ "path": "reports/evidence.md", "description":

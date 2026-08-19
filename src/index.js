@@ -40,21 +40,36 @@ export function normalizeRun(input, artifactInput) {
 
 export function renderMarkdown(packet) {
   const lines = [
-    `# Evidence Trail: ${packet.runId}`,
+    `# Evidence Trail: ${escapeMarkdownText(packet.runId)}`,
     "",
-    `Verdict: ${packet.verdict ? packet.verdict.classification : "missing"}`,
-    packet.verdict?.reason ? `Reason: ${packet.verdict.reason}` : "",
+    `Verdict: ${packet.verdict ? escapeMarkdownText(packet.verdict.classification) : "missing"}`,
+    packet.verdict?.reason ? `Reason: ${escapeMarkdownText(packet.verdict.reason)}` : "",
     ""
   ].filter(Boolean);
 
-  appendSection(lines, "Inputs", packet.inputs.map((item) => `- ${item.label || "input"}: ${item.value || item.summary || ""}`));
-  appendSection(lines, "Claims", packet.claims.map((claim) => `- ${claim.id || "claim"}: ${claim.text}${claim.evidence?.length ? ` (evidence: ${claim.evidence.join(", ")})` : ""}`));
-  appendSection(lines, "Commands", packet.commands.map((cmd) => `- ${cmd.status || "unknown"}: \`${cmd.command || cmd.id || "command"}\`${Number.isInteger(cmd.exitCode) ? ` exit ${cmd.exitCode}` : ""}${cmd.summary ? ` - ${cmd.summary}` : ""}`));
-  appendSection(lines, "Artifacts", packet.artifacts.map((artifact) => `- ${artifact.path || artifact.url || "artifact"}${artifact.description || artifact.summary ? ` - ${artifact.description || artifact.summary}` : ""}`));
-  appendSection(lines, "Risks", packet.risks.map((risk) => `- ${risk.severity || "unknown"}: ${risk.text || risk.summary || ""}`));
-  appendSection(lines, "Warnings", packet.warnings.map((warning) => `- ${warning}`));
+  appendSection(lines, "Inputs", packet.inputs.map((item) => `- ${escapeMarkdownText(item.label || "input")}: ${escapeMarkdownText(item.value || item.summary || "")}`));
+  appendSection(lines, "Claims", packet.claims.map((claim) => `- ${escapeMarkdownText(claim.id || "claim")}: ${escapeMarkdownText(claim.text)}${claim.evidence?.length ? ` (evidence: ${claim.evidence.map(escapeMarkdownText).join(", ")})` : ""}`));
+  appendSection(lines, "Commands", packet.commands.map((cmd) => `- ${escapeMarkdownText(cmd.status || "unknown")}: ${renderCodeSpan(cmd.command || cmd.id || "command")}${Number.isInteger(cmd.exitCode) ? ` exit ${cmd.exitCode}` : ""}${cmd.summary ? ` - ${escapeMarkdownText(cmd.summary)}` : ""}`));
+  appendSection(lines, "Artifacts", packet.artifacts.map((artifact) => `- ${escapeMarkdownText(artifact.path || artifact.url || "artifact")}${artifact.description || artifact.summary ? ` - ${escapeMarkdownText(artifact.description || artifact.summary)}` : ""}`));
+  appendSection(lines, "Risks", packet.risks.map((risk) => `- ${escapeMarkdownText(risk.severity || "unknown")}: ${escapeMarkdownText(risk.text || risk.summary || "")}`));
+  appendSection(lines, "Warnings", packet.warnings.map((warning) => `- ${escapeMarkdownText(warning)}`));
 
   return `${lines.join("\n")}\n`;
+}
+
+function escapeMarkdownText(value) {
+  return String(value ?? "")
+    .replace(/\r?\n|\r/g, " ")
+    .replace(/\\/g, "\\\\")
+    .replace(/([`*_[\]<>])/g, "\\$1");
+}
+
+function renderCodeSpan(value) {
+  const content = String(value ?? "").replace(/\r?\n|\r/g, " ");
+  const longestRun = Math.max(0, ...Array.from(content.matchAll(/`+/g), (match) => match[0].length));
+  const delimiter = "`".repeat(longestRun + 1);
+  const padding = /^(?:`| )|(?:`| )$/.test(content) ? " " : "";
+  return `${delimiter}${padding}${content}${padding}${delimiter}`;
 }
 
 export function renderJson(packet) {

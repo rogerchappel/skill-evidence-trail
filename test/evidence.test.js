@@ -102,3 +102,24 @@ test("renders markdown sections", async () => {
   assert.match(markdown, /## Commands/);
   assert.match(markdown, /npm test/);
 });
+
+test("renders user-controlled values without creating Markdown structure", () => {
+  const packet = normalizeRun({
+    runId: "demo\n## Forged run",
+    events: [
+      { type: "input", label: "request\n- forged input", value: "value\n# forged heading" },
+      { type: "claim", id: "claim\n- forged claim", text: "safe\n## forged claim", evidence: ["cmd"] },
+      { type: "command", id: "cmd", status: "pass\n- forged status", command: "printf `x` && echo ``y``", exitCode: 0, summary: "done\n- forged summary" },
+      { type: "artifact", path: "report.md\n## forged artifact", description: "result\n- forged description" },
+      { type: "risk", severity: "low\n- forged severity", text: "known\n## forged risk" },
+      { type: "verdict", classification: "ship", reason: "verified\n- forged reason" }
+    ]
+  });
+
+  const markdown = renderMarkdown(packet);
+
+  assert.equal(markdown.match(/^#/gm)?.length, 7);
+  assert.equal(markdown.match(/^- /gm)?.length, 6);
+  assert.doesNotMatch(markdown, /^## Forged|^## forged|^- forged/gm);
+  assert.match(markdown, /``` printf `x` && echo ``y`` ```/);
+});
