@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 
 const requiredFiles = [
   "package.json",
+  "LICENSE",
   "README.md",
   "SKILL.md",
   "fixtures/artifacts.json",
