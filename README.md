@@ -33,6 +33,12 @@ Every `verdict` event must include one of those three classifications. Missing
 or unsupported classifications stop normalization and the CLI reports the
 zero-based event index so the invalid event can be corrected.
 
+Every `command` event must record `status` as exactly `pass` or `fail` and
+`exitCode` as an integer. A passing command requires exit code `0`; a failing
+command requires a nonzero exit code. Missing or inconsistent completion
+evidence stops normalization with the zero-based event index, so a `ship`
+verdict cannot present an incomplete command as warning-free evidence.
+
 Artifact manifests are optional JSON arrays or `{ "artifacts": [...] }` objects.
 Markdown output collapses embedded line breaks in event values so they cannot create
 headings or list entries, escapes inline Markdown punctuation, and uses a code-span
@@ -66,7 +72,7 @@ successful verdict without local events.
 ## Limitations
 
 - Input validation is intentionally conservative and schema-light, with strict
-  validation of verdict classifications.
+  validation of verdict classifications and command completion evidence.
 - Markdown reports are concise by design.
 - The tool does not verify that an artifact path still exists unless it appears
   in the provided fixture data.

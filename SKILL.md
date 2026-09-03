@@ -21,7 +21,9 @@ release candidate, handoff, or public summary.
 1. Collect input, claim, command, artifact, risk, and verdict events. Set every
    verdict classification to exactly `ship`, `incubate`, or `blocked`; the CLI
    rejects missing or unsupported values and identifies the zero-based event
-   index.
+   index. Set every command status to `pass` with integer exit code `0`, or
+   `fail` with a nonzero integer exit code; missing or inconsistent completion
+   evidence is rejected with the same event-specific diagnostic.
 2. Run `skill-evidence-trail run.json --artifacts artifacts.json --format markdown`.
 3. Review warnings for missing commands, uncovered claims, and unresolved risks.
 4. Paste the packet into the PR body or release-candidate notes.
