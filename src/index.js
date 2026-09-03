@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 const EVENT_TYPES = new Set(["input", "claim", "command", "artifact", "risk", "verdict"]);
 const VERDICT_CLASSIFICATIONS = new Set(["ship", "incubate", "blocked"]);
+const COMMAND_STATUSES = new Set(["pass", "fail"]);
 
 export async function loadJson(path) {
   const raw = await readFile(path, "utf8");
@@ -89,10 +90,28 @@ function normalizeEvent(event, index) {
   if (event.type === "verdict" && !VERDICT_CLASSIFICATIONS.has(event.classification)) {
     throw new Error(`Event ${index} has unsupported verdict classification: ${event.classification}`);
   }
+  if (event.type === "command") {
+    validateCommandEvent(event, index);
+  }
   return {
     ...event,
     evidence: Array.isArray(event.evidence) ? event.evidence : event.evidence ? [String(event.evidence)] : []
   };
+}
+
+function validateCommandEvent(event, index) {
+  if (!Number.isInteger(event.exitCode)) {
+    throw new Error(`Event ${index} command exitCode must be an integer.`);
+  }
+  if (!COMMAND_STATUSES.has(event.status)) {
+    throw new Error(`Event ${index} command status must be pass or fail.`);
+  }
+  if (event.status === "pass" && event.exitCode !== 0) {
+    throw new Error(`Event ${index} command status pass requires exitCode 0.`);
+  }
+  if (event.status === "fail" && event.exitCode === 0) {
+    throw new Error(`Event ${index} command status fail requires a nonzero exitCode.`);
+  }
 }
 
 function collectArtifacts(events, artifactInput) {
