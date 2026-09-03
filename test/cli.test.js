@@ -33,6 +33,30 @@ test("CLI reports a missing verdict classification", async () => {
   assert.match(result.stderr, /skill-evidence-trail: Event 0 is missing a verdict classification/);
 });
 
+test("CLI rejects a ship packet whose claim references incomplete command evidence", async () => {
+  const result = await runCli([
+    { type: "claim", id: "tested", text: "Tests pass", evidence: ["cmd-test"] },
+    { type: "command", id: "cmd-test", status: "pass", command: "npm test" },
+    { type: "verdict", classification: "ship" }
+  ], ["--format", "json"]);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /skill-evidence-trail: Event 1 command exitCode must be an integer\./);
+  assert.doesNotMatch(result.stdout, /"warnings": \[\]/);
+});
+
+test("CLI reports inconsistent command status using the zero-based event index", async () => {
+  const result = await runCli([
+    { type: "input", label: "request", value: "demo" },
+    { type: "command", id: "cmd-test", status: "pass", command: "npm test", exitCode: 2 },
+    { type: "verdict", classification: "blocked" }
+  ], ["--format", "json"]);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /skill-evidence-trail: Event 1 command status pass requires exitCode 0\./);
+});
+
 test("CLI reports a null run input", async () => {
   const result = await runCliInput(null);
 

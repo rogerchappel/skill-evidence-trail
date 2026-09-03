@@ -94,6 +94,39 @@ test("rejects a missing verdict classification with its event index", () => {
   );
 });
 
+for (const [label, command, message] of [
+  ["missing exit code", { type: "command", status: "pass" }, "Event 1 command exitCode must be an integer."],
+  ["fractional exit code", { type: "command", status: "fail", exitCode: 1.5 }, "Event 1 command exitCode must be an integer."],
+  ["unsupported status", { type: "command", status: "success", exitCode: 0 }, "Event 1 command status must be pass or fail."],
+  ["passing nonzero exit", { type: "command", status: "pass", exitCode: 1 }, "Event 1 command status pass requires exitCode 0."],
+  ["failing zero exit", { type: "command", status: "fail", exitCode: 0 }, "Event 1 command status fail requires a nonzero exitCode."]
+]) {
+  test(`rejects a command with ${label}`, () => {
+    assert.throws(
+      () => normalizeRun({ events: [{ type: "input" }, command] }),
+      new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    );
+  });
+}
+
+test("retains deterministic output for valid passing and failing commands", () => {
+  const packet = normalizeRun({
+    events: [
+      { type: "command", id: "pass", status: "pass", command: "npm test", exitCode: 0 },
+      { type: "command", id: "fail", status: "fail", command: "npm run lint", exitCode: 2 },
+      { type: "verdict", classification: "blocked" }
+    ]
+  });
+
+  assert.deepEqual(packet.commands.map(({ status, exitCode }) => ({ status, exitCode })), [
+    { status: "pass", exitCode: 0 },
+    { status: "fail", exitCode: 2 }
+  ]);
+  assert.deepEqual(packet.warnings, ["One or more commands did not pass."]);
+  assert.match(renderMarkdown(packet), /- pass: `npm test` exit 0/);
+  assert.match(renderMarkdown(packet), /- fail: `npm run lint` exit 2/);
+});
+
 test("renders markdown sections", async () => {
   const packet = normalizeRun(await loadJson("fixtures/run-events.json"));
   const markdown = renderMarkdown(packet);
@@ -109,7 +142,7 @@ test("renders user-controlled values without creating Markdown structure", () =>
     events: [
       { type: "input", label: "request\n- forged input", value: "value\n# forged heading" },
       { type: "claim", id: "claim\n- forged claim", text: "safe\n## forged claim", evidence: ["cmd"] },
-      { type: "command", id: "cmd", status: "pass\n- forged status", command: "printf `x` && echo ``y``", exitCode: 0, summary: "done\n- forged summary" },
+      { type: "command", id: "cmd", status: "pass", command: "printf `x` && echo ``y``", exitCode: 0, summary: "done\n- forged summary" },
       { type: "artifact", path: "report.md\n## forged artifact", description: "result\n- forged description" },
       { type: "risk", severity: "low\n- forged severity", text: "known\n## forged risk" },
       { type: "verdict", classification: "ship", reason: "verified\n- forged reason" }
