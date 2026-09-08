@@ -46,6 +46,18 @@ test("CLI rejects a ship packet whose claim references incomplete command eviden
   assert.doesNotMatch(result.stdout, /"warnings": \[\]/);
 });
 
+test("CLI rejects a ship packet with an anonymous passing command", async () => {
+  const result = await runCli([
+    { type: "command", id: " ", command: "\t", status: "pass", exitCode: 0 },
+    { type: "verdict", classification: "ship" }
+  ], ["--format", "json"]);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /skill-evidence-trail: Event 0 command must include a non-empty command or id\./);
+  assert.doesNotMatch(result.stdout, /"warnings": \[\]/);
+});
+
 test("CLI reports inconsistent command status using the zero-based event index", async () => {
   const result = await runCli([
     { type: "input", label: "request", value: "demo" },
