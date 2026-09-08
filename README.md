@@ -33,11 +33,12 @@ Every `verdict` event must include one of those three classifications. Missing
 or unsupported classifications stop normalization and the CLI reports the
 zero-based event index so the invalid event can be corrected.
 
-Every `command` event must record `status` as exactly `pass` or `fail` and
-`exitCode` as an integer. A passing command requires exit code `0`; a failing
-command requires a nonzero exit code. Missing or inconsistent completion
-evidence stops normalization with the zero-based event index, so a `ship`
-verdict cannot present an incomplete command as warning-free evidence.
+Every `command` event must identify the check with a non-empty `command` or
+stable `id`, record `status` as exactly `pass` or `fail`, and record `exitCode`
+as an integer. A passing command requires exit code `0`; a failing command
+requires a nonzero exit code. Blank, missing, or inconsistent evidence stops
+normalization with the zero-based event index, so a `ship` verdict cannot
+present anonymous or incomplete command evidence as warning-free.
 
 Artifact manifests are optional JSON arrays or `{ "artifacts": [...] }` objects.
 Markdown output collapses embedded line breaks in event values so they cannot create
