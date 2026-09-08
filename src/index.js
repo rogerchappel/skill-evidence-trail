@@ -100,6 +100,9 @@ function normalizeEvent(event, index) {
 }
 
 function validateCommandEvent(event, index) {
+  if (![event.command, event.id].some((value) => typeof value === "string" && value.trim())) {
+    throw new Error(`Event ${index} command must include a non-empty command or id.`);
+  }
   if (!Number.isInteger(event.exitCode)) {
     throw new Error(`Event ${index} command exitCode must be an integer.`);
   }
