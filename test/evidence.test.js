@@ -95,11 +95,13 @@ test("rejects a missing verdict classification with its event index", () => {
 });
 
 for (const [label, command, message] of [
-  ["missing exit code", { type: "command", status: "pass" }, "Event 1 command exitCode must be an integer."],
-  ["fractional exit code", { type: "command", status: "fail", exitCode: 1.5 }, "Event 1 command exitCode must be an integer."],
-  ["unsupported status", { type: "command", status: "success", exitCode: 0 }, "Event 1 command status must be pass or fail."],
-  ["passing nonzero exit", { type: "command", status: "pass", exitCode: 1 }, "Event 1 command status pass requires exitCode 0."],
-  ["failing zero exit", { type: "command", status: "fail", exitCode: 0 }, "Event 1 command status fail requires a nonzero exitCode."]
+  ["missing identifier", { type: "command", status: "pass", exitCode: 0 }, "Event 1 command must include a non-empty command or id."],
+  ["blank identifiers", { type: "command", id: "  ", command: "\t", status: "pass", exitCode: 0 }, "Event 1 command must include a non-empty command or id."],
+  ["missing exit code", { type: "command", id: "cmd", status: "pass" }, "Event 1 command exitCode must be an integer."],
+  ["fractional exit code", { type: "command", id: "cmd", status: "fail", exitCode: 1.5 }, "Event 1 command exitCode must be an integer."],
+  ["unsupported status", { type: "command", id: "cmd", status: "success", exitCode: 0 }, "Event 1 command status must be pass or fail."],
+  ["passing nonzero exit", { type: "command", id: "cmd", status: "pass", exitCode: 1 }, "Event 1 command status pass requires exitCode 0."],
+  ["failing zero exit", { type: "command", id: "cmd", status: "fail", exitCode: 0 }, "Event 1 command status fail requires a nonzero exitCode."]
 ]) {
   test(`rejects a command with ${label}`, () => {
     assert.throws(
