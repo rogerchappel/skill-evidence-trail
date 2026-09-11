@@ -138,6 +138,28 @@ test("renders markdown sections", async () => {
   assert.match(markdown, /npm test/);
 });
 
+for (const [label, verdict] of [
+  ["a verdict with a reason", { type: "verdict", classification: "ship", reason: "all checks passed" }],
+  ["a verdict without a reason", { type: "verdict", classification: "ship" }],
+  ["no verdict", null]
+]) {
+  test(`separates the markdown header with blank lines for ${label}`, () => {
+    const packet = normalizeRun({
+      events: [
+        { type: "input", label: "request", value: "demo" },
+        ...(verdict ? [verdict] : [])
+      ]
+    });
+    const markdown = renderMarkdown(packet);
+
+    assert.match(markdown, /^# Evidence Trail: [^\n]*\n\nVerdict: /m);
+    if (packet.verdict?.reason) {
+      assert.match(markdown, /\nVerdict: [^\n]*\n\nReason: /);
+    }
+    assert.match(markdown, /\n\n## Inputs/);
+  });
+}
+
 test("renders user-controlled values without creating Markdown structure", () => {
   const packet = normalizeRun({
     runId: "demo\n## Forged run",
