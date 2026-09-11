@@ -7,4 +7,5 @@
 - [x] Add fixture-backed tests.
 - [x] Add validation and smoke commands.
 - [x] Reject output paths that alias an input through symlinks, hard links, or letter case.
+- [x] Separate Markdown header lines with blank-line spacers.
 

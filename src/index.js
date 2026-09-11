@@ -40,13 +40,18 @@ export function normalizeRun(input, artifactInput) {
 }
 
 export function renderMarkdown(packet) {
+  // Blank-line spacers are pushed explicitly instead of being emitted as ""
+  // entries for a later .filter(Boolean), which previously stripped them and
+  // glued the title, verdict, reason, and first section heading together.
   const lines = [
     `# Evidence Trail: ${escapeMarkdownText(packet.runId)}`,
     "",
-    `Verdict: ${packet.verdict ? escapeMarkdownText(packet.verdict.classification) : "missing"}`,
-    packet.verdict?.reason ? `Reason: ${escapeMarkdownText(packet.verdict.reason)}` : "",
-    ""
-  ].filter(Boolean);
+    `Verdict: ${packet.verdict ? escapeMarkdownText(packet.verdict.classification) : "missing"}`
+  ];
+  if (packet.verdict?.reason) {
+    lines.push("", `Reason: ${escapeMarkdownText(packet.verdict.reason)}`);
+  }
+  lines.push("");
 
   appendSection(lines, "Inputs", packet.inputs.map((item) => `- ${escapeMarkdownText(item.label || "input")}: ${escapeMarkdownText(item.value || item.summary || "")}`));
   appendSection(lines, "Claims", packet.claims.map((claim) => `- ${escapeMarkdownText(claim.id || "claim")}: ${escapeMarkdownText(claim.text)}${claim.evidence?.length ? ` (evidence: ${claim.evidence.map(escapeMarkdownText).join(", ")})` : ""}`));
