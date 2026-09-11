@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { writeFile } from "node:fs/promises";
+import { stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadJson, normalizeRun, renderJson, renderMarkdown } from "./index.js";
 
@@ -14,7 +14,7 @@ const runPath = args[0];
 
 try {
   const options = parseOptions(args.slice(1));
-  validateOutputPath(runPath, options);
+  await validateOutputPath(runPath, options);
   const run = await loadJson(runPath);
   const artifacts = options.artifacts ? await loadJson(options.artifacts) : undefined;
   const packet = normalizeRun(run, artifacts);
@@ -29,15 +29,53 @@ try {
   process.exit(1);
 }
 
-function validateOutputPath(runPath, options) {
+async function validateOutputPath(runPath, options) {
   if (!options.out) return;
 
   const outputPath = resolve(options.out);
-  if (outputPath === resolve(runPath)) {
+  const runInputPath = resolve(runPath);
+  const artifactInputPath = options.artifacts ? resolve(options.artifacts) : null;
+
+  if (samePathText(outputPath, runInputPath)) {
     throw new Error("--out must not overwrite the run input.");
   }
-  if (options.artifacts && outputPath === resolve(options.artifacts)) {
+  if (artifactInputPath && samePathText(outputPath, artifactInputPath)) {
     throw new Error("--out must not overwrite the artifact input.");
+  }
+
+  const outputStat = await statIfExists(outputPath);
+  if (!outputStat) return;
+
+  if (await isSameFile(outputStat, runInputPath)) {
+    throw new Error("--out must not overwrite the run input.");
+  }
+  if (artifactInputPath && (await isSameFile(outputStat, artifactInputPath))) {
+    throw new Error("--out must not overwrite the artifact input.");
+  }
+}
+
+// On case-insensitive filesystems (macOS defaults, Windows) two paths that
+// differ only in letter case name the same file, so textual comparison is
+// case-folded in addition to the exact comparison. On case-sensitive
+// filesystems this only rejects a narrower, safe-side superset.
+function samePathText(left, right) {
+  return left === right || left.toLowerCase() === right.toLowerCase();
+}
+
+// Symlinked and hard-linked output paths share the run or artifact input's
+// underlying file, so identity is resolved to the filesystem-level
+// (device, inode) pair instead of the path text.
+async function isSameFile(outputStat, inputPath) {
+  const inputStat = await statIfExists(inputPath);
+  return Boolean(inputStat && inputStat.dev === outputStat.dev && inputStat.ino === outputStat.ino);
+}
+
+async function statIfExists(path) {
+  try {
+    return await stat(path);
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
   }
 }
 

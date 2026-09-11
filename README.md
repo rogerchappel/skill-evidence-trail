@@ -62,7 +62,11 @@ or artifact inputs and before writing output.
 
 An `--out` path must be distinct from both the run input and the optional
 artifact input. Equivalent relative and absolute paths are rejected before any
-file is written, so the CLI never overwrites either source file.
+file is written, so the CLI never overwrites either source file. The same
+guard covers paths that reach either input through a symlink or hard link and
+paths that differ only in letter case, so a case-insensitive filesystem
+(macOS defaults, Windows) cannot alias `--out` onto an input either. The
+rejection happens before the run or artifact inputs are read.
 
 ## Safety
 
