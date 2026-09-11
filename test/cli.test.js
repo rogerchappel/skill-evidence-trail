@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { link, mkdtemp, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -180,6 +180,78 @@ test("CLI rejects an output path that aliases the artifact input", async () => {
   assert.equal(await readFile(run, "utf8"), runSource);
   assert.equal(await readFile(artifacts, "utf8"), artifactSource);
 });
+
+test("CLI rejects an output path that aliases the run input through a symlink", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-symlink-alias-test-"));
+  const run = join(directory, "run.json");
+  const alias = join(directory, "run-link.json");
+  const source = '{"events":[]}\n';
+  await writeFile(run, source);
+  await symlink("run.json", alias);
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, "run.json", "--out", alias],
+    { cwd: directory, encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
+  assert.equal(await readFile(run, "utf8"), source);
+});
+
+test("CLI rejects an output path that aliases the run input through a hard link", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-hardlink-alias-test-"));
+  const run = join(directory, "run.json");
+  const alias = join(directory, "run-hardlink.json");
+  const source = '{"events":[]}\n';
+  await writeFile(run, source);
+  await link(run, alias);
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, "run.json", "--out", alias],
+    { cwd: directory, encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
+  assert.equal(await readFile(run, "utf8"), source);
+});
+
+test("CLI rejects an output path that aliases the run input through letter case on case-insensitive filesystems", async (t) => {
+  if (!(await isCaseInsensitive())) {
+    t.skip("filesystem is case-sensitive; case aliasing cannot be exercised");
+  }
+
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-case-alias-test-"));
+  const run = join(directory, "run.json");
+  const source = '{"events":[]}\n';
+  await writeFile(run, source);
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, "run.json", "--out", "RUN.JSON"],
+    { cwd: directory, encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
+  assert.equal(await readFile(run, "utf8"), source);
+});
+
+async function isCaseInsensitive() {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-case-probe-"));
+  const probe = join(directory, "case-probe.json");
+  await writeFile(probe, "{}\n");
+  try {
+    const direct = await stat(probe);
+    const swapped = await stat(join(directory, "CASE-PROBE.JSON"));
+    return direct.ino === swapped.ino && direct.dev === swapped.dev;
+  } catch {
+    return false;
+  }
+}
 
 test("CLI writes a distinct output without changing either input", async () => {
   const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-distinct-out-test-"));
