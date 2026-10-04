@@ -13,9 +13,11 @@ npm run smoke
 node src/cli.js fixtures/run-events.json --artifacts fixtures/artifacts.json --format markdown
 ```
 
-Before publishing, run `npm run package:check`. It inspects the generated
-tarball and runs the tests, syntax check, build check, smoke command, and CLI
-help directly from the unpacked artifact.
+Before a release, run `npm run release:check` to execute the full test, syntax,
+build, smoke, and package checks. This is a local validation gate only; it does
+not publish anything. For package validation alone, `npm run package:check`
+inspects the generated tarball and exercises the CLI help directly from the
+unpacked artifact.
 
 ## Input
 
