@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { stat, writeFile } from "node:fs/promises";
+import { realpath, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadJson, normalizeRun, renderJson, renderMarkdown } from "./index.js";
 
@@ -32,9 +32,9 @@ try {
 async function validateOutputPath(runPath, options) {
   if (!options.out) return;
 
-  const outputPath = resolve(options.out);
-  const runInputPath = resolve(runPath);
-  const artifactInputPath = options.artifacts ? resolve(options.artifacts) : null;
+  const outputPath = await resolveForWrite(options.out);
+  const runInputPath = await realpath(resolve(runPath));
+  const artifactInputPath = options.artifacts ? await realpath(resolve(options.artifacts)) : null;
 
   if (samePathText(outputPath, runInputPath)) {
     throw new Error("--out must not overwrite the run input.");
@@ -68,6 +68,20 @@ function samePathText(left, right) {
 async function isSameFile(outputStat, inputPath) {
   const inputStat = await statIfExists(inputPath);
   return Boolean(inputStat && inputStat.dev === outputStat.dev && inputStat.ino === outputStat.ino);
+}
+
+async function resolveForWrite(path) {
+  const absolutePath = resolve(path);
+  try {
+    return await realpath(absolutePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    // Resolve the existing parent so aliases through symlinked directories are
+    // compared against canonical input paths even when the output is new.
+    const parent = resolve(absolutePath, "..");
+    const canonicalParent = await realpath(parent);
+    return resolve(canonicalParent, absolutePath.slice(parent.length + 1));
+  }
 }
 
 async function statIfExists(path) {

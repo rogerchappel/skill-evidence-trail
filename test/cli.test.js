@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { link, mkdtemp, readFile, stat, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -198,6 +198,52 @@ test("CLI rejects an output path that aliases the run input through a symlink", 
   assert.equal(result.status, 1);
   assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
   assert.equal(await readFile(run, "utf8"), source);
+});
+
+test("CLI rejects an output path that aliases the run input through a symlinked parent", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-symlink-parent-run-test-"));
+  const realDirectory = join(directory, "real");
+  const aliasDirectory = join(directory, "alias");
+  const run = join(realDirectory, "run.json");
+  const source = '{"events":[]}\\n';
+  await mkdir(realDirectory);
+  await writeFile(run, source);
+  await symlink(realDirectory, aliasDirectory, "dir");
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, run, "--out", join(aliasDirectory, "run.json")],
+    { encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the run input.\n");
+  assert.equal(await readFile(run, "utf8"), source);
+});
+
+test("CLI rejects an output path that aliases the artifact input through a symlinked parent", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "skill-evidence-trail-symlink-parent-artifact-test-"));
+  const realDirectory = join(directory, "real");
+  const aliasDirectory = join(directory, "alias");
+  const run = join(directory, "run.json");
+  const artifacts = join(realDirectory, "artifacts.json");
+  const runSource = '{"events":[]}\\n';
+  const artifactSource = '{"artifacts":[]}\\n';
+  await mkdir(realDirectory);
+  await writeFile(run, runSource);
+  await writeFile(artifacts, artifactSource);
+  await symlink(realDirectory, aliasDirectory, "dir");
+
+  const result = spawnSync(
+    process.execPath,
+    [cliPath, run, "--artifacts", artifacts, "--out", join(aliasDirectory, "artifacts.json")],
+    { encoding: "utf8" }
+  );
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr, "skill-evidence-trail: --out must not overwrite the artifact input.\n");
+  assert.equal(await readFile(run, "utf8"), runSource);
+  assert.equal(await readFile(artifacts, "utf8"), artifactSource);
 });
 
 test("CLI rejects an output path that aliases the run input through a hard link", async () => {
