@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -45,6 +45,21 @@ try {
     }
     execFileSync("npm", ["run", command], { cwd: packageDir, stdio: "inherit" });
   }
+
+  const consumerDir = join(workspace, "consumer");
+  await mkdir(consumerDir);
+  await writeFile(join(consumerDir, "package.json"), JSON.stringify({ type: "module" }));
+  const consumerScript = join(consumerDir, "entrypoints.mjs");
+  await writeFile(consumerScript, [
+    'import assert from "node:assert/strict";',
+    'import * as library from "skill-evidence-trail";',
+    'assert.equal(typeof library.normalizeRun, "function");'
+  ].join("\n"));
+  // Resolve the packed package as a real consumer would, without linking the source tree.
+  const nodeModules = join(consumerDir, "node_modules");
+  await mkdir(nodeModules);
+  await symlink(packageDir, join(nodeModules, "skill-evidence-trail"), "dir");
+  execFileSync("node", [consumerScript], { cwd: consumerDir, stdio: "inherit" });
 
   execFileSync("node", ["src/cli.js", "--help"], {
     cwd: packageDir,
