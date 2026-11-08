@@ -51,6 +51,19 @@ location with `path` or `url` and may describe it with `description` or
 `summary`; for example, `{ "path": "reports/evidence.md", "description":
 "Rendered evidence packet" }`.
 
+## Package entry points
+
+The published package supports importing the library from its package root:
+
+```js
+import { normalizeRun } from "skill-evidence-trail";
+```
+
+The CLI is executable-only: install the package and invoke the `skill-evidence-trail`
+binary (or run `node src/cli.js` from a checkout). The CLI is not an importable
+package subpath. `npm run package:check` verifies the library import and executable
+from the packed tarball.
+
 ## CLI
 
 ```bash
