@@ -11,6 +11,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +27,3 @@ jobs:
       - run: npm run smoke
       - run: npm run package:check
       - run: npm run release:check
-    strategy:
-      matrix:
-        node-version: [20, 24]
