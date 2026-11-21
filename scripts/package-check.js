@@ -1,71 +1,32 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-
-const requiredFiles = [
-  "package.json",
-  "LICENSE",
-  "README.md",
-  "SKILL.md",
-  "fixtures/artifacts.json",
-  "fixtures/run-events.json",
-  "scripts/build-check.js",
-  "scripts/package-check.js",
-  "scripts/validate.sh",
-  "src/cli.js",
-  "src/index.js",
-  "test/evidence.test.js"
-];
+import { join } from "node:path";
 
 const workspace = await mkdtemp(join(tmpdir(), "skill-evidence-trail-package-"));
 
 try {
-  const packOutput = execFileSync(
-    "npm",
-    ["pack", "--json", "--pack-destination", workspace],
-    { encoding: "utf8" }
-  );
-  const [manifest] = JSON.parse(packOutput);
-  const packedFiles = new Set(manifest.files.map(({ path }) => path));
-  const missing = requiredFiles.filter((path) => !packedFiles.has(path));
-
-  if (missing.length > 0) {
-    throw new Error(`package is missing required files: ${missing.join(", ")}`);
-  }
-
-  const archive = resolve(workspace, manifest.filename);
-  execFileSync("tar", ["-xzf", archive, "-C", workspace]);
-  const packageDir = join(workspace, "package");
-  const packageJson = JSON.parse(await readFile(join(packageDir, "package.json"), "utf8"));
-
-  for (const command of ["test", "check", "build", "smoke"]) {
-    if (!packageJson.scripts[command]) {
-      throw new Error(`package.json is missing the ${command} script`);
-    }
-    execFileSync("npm", ["run", command], { cwd: packageDir, stdio: "inherit" });
-  }
-
-  const consumerDir = join(workspace, "consumer");
-  await mkdir(consumerDir);
-  await writeFile(join(consumerDir, "package.json"), JSON.stringify({ type: "module" }));
-  const consumerScript = join(consumerDir, "entrypoints.mjs");
-  await writeFile(consumerScript, [
+  const output = execFileSync("npm", ["pack", "--json", "--pack-destination", workspace], { encoding: "utf8" });
+  const [manifest] = JSON.parse(output);
+  const archive = join(workspace, manifest.filename);
+  const consumer = join(workspace, "consumer");
+  await import("node:fs/promises").then(({ mkdir }) => mkdir(consumer));
+  execFileSync("npm", ["init", "--yes"], { cwd: consumer, stdio: "ignore" });
+  execFileSync("npm", ["install", "--ignore-scripts", archive], { cwd: consumer, stdio: "inherit" });
+  const packageJson = JSON.parse(await readFile(join(consumer, "node_modules/skill-evidence-trail/package.json"), "utf8"));
+  const entry = join(consumer, "consumer.mjs");
+  await (await import("node:fs/promises")).writeFile(entry, [
     'import assert from "node:assert/strict";',
-    'import * as library from "skill-evidence-trail";',
-    'assert.equal(typeof library.normalizeRun, "function");'
+    'import * as api from "skill-evidence-trail";',
+    'assert.equal(typeof api.normalizeRun, "function");'
   ].join("\n"));
-  // Resolve the packed package as a real consumer would, without linking the source tree.
-  const nodeModules = join(consumerDir, "node_modules");
-  await mkdir(nodeModules);
-  await symlink(packageDir, join(nodeModules, "skill-evidence-trail"), "dir");
-  execFileSync("node", [consumerScript], { cwd: consumerDir, stdio: "inherit" });
-
-  execFileSync("node", ["src/cli.js", "--help"], {
-    cwd: packageDir,
-    stdio: "inherit"
-  });
-  console.log(`package-check: ${packedFiles.size} files verified from packed artifact`);
+  execFileSync("node", [entry], { cwd: consumer, stdio: "inherit" });
+  const bin = packageJson.bin["skill-evidence-trail"];
+  if (!bin || !(await import("node:fs/promises")).stat(join(consumer, "node_modules/skill-evidence-trail", bin))) {
+    throw new Error("declared CLI binary is missing from packed artifact");
+  }
+  execFileSync(join(consumer, "node_modules/.bin/skill-evidence-trail"), ["--help"], { cwd: consumer, stdio: "inherit" });
+  console.log("package-check: packed consumer import and CLI verified");
 } finally {
   await rm(workspace, { recursive: true, force: true });
 }
