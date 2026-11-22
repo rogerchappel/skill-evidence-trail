@@ -180,3 +180,9 @@ test("renders user-controlled values without creating Markdown structure", () =>
   assert.doesNotMatch(markdown, /^## Forged|^## forged|^- forged/gm);
   assert.match(markdown, /``` printf `x` && echo ``y`` ```/);
 });
+
+test("preserves an explicitly empty run ID", () => {
+  const packet = normalizeRun({ runId: "", events: [] });
+
+  assert.equal(packet.runId, "");
+});

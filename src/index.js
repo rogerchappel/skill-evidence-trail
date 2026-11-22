@@ -28,7 +28,7 @@ export function normalizeRun(input, artifactInput) {
   const warnings = buildWarnings({ claims, commands, risks, verdict });
 
   return {
-    runId: input.runId || "unknown-run",
+    runId: input.runId ?? "unknown-run",
     inputs: normalized.filter((event) => event.type === "input"),
     claims,
     commands,
