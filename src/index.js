@@ -67,7 +67,7 @@ function escapeMarkdownText(value) {
   return String(value ?? "")
     .replace(/\r?\n|\r/g, " ")
     .replace(/\\/g, "\\\\")
-    .replace(/([`*_[\]<>])/g, "\\$1");
+    .replace(/([`*_[\]()<>])/g, "\\$1");
 }
 
 function renderCodeSpan(value) {
