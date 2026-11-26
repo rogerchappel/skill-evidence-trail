@@ -13,6 +13,15 @@ test("normalizes a fixture run into an evidence packet", async () => {
   assert.deepEqual(packet.warnings, []);
 });
 
+test("renders user-controlled Markdown links as inert escaped text", () => {
+  const packet = normalizeRun({
+    events: [{ type: "input", label: "source", value: "[click](https://example.test)" }]
+  });
+  const markdown = renderMarkdown(packet);
+  assert.match(markdown, /\\\[click\\\]\\\(https:\/\/example\.test\\\)/);
+  assert.doesNotMatch(markdown, /\]\(https:\/\/example\.test\)/);
+});
+
 test("warns when a claim has missing evidence", () => {
   const packet = normalizeRun({
     events: [
